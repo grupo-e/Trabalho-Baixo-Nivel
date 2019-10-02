@@ -11,6 +11,12 @@
 // marcelo.cohen@pucrs.br
 // **********************************************************************
 
+typedef struct{
+    unsigned char* data;
+    int contador;
+
+} image;
+
 typedef struct {
     int largura, altura;
     unsigned char* imagemOrig;    // vetor com o conteúdo do arquivo
@@ -26,7 +32,7 @@ void dump(Imagem* img);
 void carregaPGM(const char *nome, Imagem* img)
 {
     FILE *arq;
-    arq = fopen (nome,"rb");
+    arq = fopen (nome,"rt");
     if (arq == NULL)
     {
         printf("Problemas na abertura do arquivo %s...\n", nome);
@@ -68,9 +74,25 @@ void dump(Imagem* img)
 	printf("\n");
 }
 
-// **********************************************************************
+void valida(Imagem* img)
+{
+    int tamOrig  = img->largura * img->altura;
+    int tamTotal = 0;
+    int pos = 0;
+    unsigned char* ptr = img->imagemCompact;
+    while(pos < img->tamCompact) {
+        int qtd = *ptr;
+        unsigned char val = *(ptr+1);
+        printf("Out: %d x %02X\n", qtd, val);
+        tamTotal += qtd;
+        ptr += 2;
+        pos += 2;
+    }
+    printf("Tamanho total/original: %d / %d\n", tamTotal, tamOrig);
+}
 void compactar(Imagem* img){
     
+    image compact[img -> tamOrig];
     unsigned char* comparar;
     int i, cont;
     cont = 0;
@@ -86,47 +108,54 @@ void compactar(Imagem* img){
 
     comparar = img -> imagemOrig[i];
     int cont2 = 0;
-    cont = 0;
+    cont = 1;
     for (i;i < img -> tamOrig; i++){
         if (img -> imagemOrig[i] == comparar){
             if(cont<=254){
             cont++;
             }
             else{
+                compact[cont2].data = img -> imagemOrig[i-1];
+                compact[cont2].contador = cont;
                 img -> imagemCompact[cont2] = cont;
                 cont2++;
-                cont=0;
+                cont=1;
             }
             }
 
             
         else {
             comparar=img->imagemOrig[i];
+            compact[cont2].data = img -> imagemOrig[i-1];
+            compact[cont2].contador = cont;
             img -> imagemCompact[cont2] = cont;
             cont2++;
-            cont = 0;
+            cont = 1;
         }
         
     }
     
-    for (i = 0; i < cont2+1; i++){
-        printf("%d\n", img -> imagemCompact[i]);
+    for (i = 0; i < cont2; i++){
+        printf("Out: %d x %X\n", compact[i].contador, compact[i].data );
     }
 
 
     
 
 }
-//***********************************************************************
+
+
+// **********************************************************************
 int main()
 {
-    char nomeArquivo[] = "logofacin.pgm";
+    char nomeArquivo[] = "x.pgm";
     int largura, altura;
 
 	Imagem imagem;
     carregaPGM(nomeArquivo, &imagem);
 
 	dump(&imagem);
+    compactar(&imagem);
 
 	// Libera memoria de ambas as imagens
 	free(imagem.imagemOrig);
